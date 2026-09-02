@@ -1,0 +1,16 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Talent {
+  id       String @id @default(cuid())
+  name     String
+  role     String
+  image    String
+  category String
+  city     String
+}
