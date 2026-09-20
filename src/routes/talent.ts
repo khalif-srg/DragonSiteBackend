@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
+import { requireAuth } from '../middleware/requireAuth'
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -10,17 +11,10 @@ const prisma = new PrismaClient({ adapter })
 
 const router = Router()
 
-// GET all talent (optionally filtered by city/category via query params)
+// GET all talent
 router.get('/', async (req, res) => {
-  const { city, category } = req.query
-
   try {
-    const talent = await prisma.talent.findMany({
-      where: {
-        ...(city && { city: String(city) }),
-        ...(category && { category: String(category) }),
-      },
-    })
+    const talent = await prisma.talent.findMany()
     res.json(talent)
   } catch (err) {
     console.error('FULL ERROR:', err)
@@ -40,6 +34,25 @@ router.get('/:id', async (req, res) => {
     }
 
     res.json(talent)
+  } catch (err) {
+    console.error('FULL ERROR:', err)
+    res.status(500).json({ error: 'Something went wrong' })
+  }
+})
+
+// POST a new talent — protected, requires login
+router.post('/', requireAuth, async (req, res) => {
+  const { name, role, image, category, city } = req.body
+
+  if (!name || !role || !image || !category || !city) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
+
+  try {
+    const newTalent = await prisma.talent.create({
+      data: { name, role, image, category, city },
+    })
+    res.status(201).json(newTalent)
   } catch (err) {
     console.error('FULL ERROR:', err)
     res.status(500).json({ error: 'Something went wrong' })
