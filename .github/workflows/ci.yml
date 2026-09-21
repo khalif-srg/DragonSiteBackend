@@ -9,5 +9,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - run: npm run lint
+      - run: npm audit --audit-level=high
       - run: npx prisma generate
       - run: npx tsc --noEmit
